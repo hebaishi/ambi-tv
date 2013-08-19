@@ -23,6 +23,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
@@ -167,7 +168,14 @@ ambitv_lpd8806_clear_leds(struct ambitv_sink_component* component)
       // send 3 times, in case there's noise on the line,
       // so that all LEDs will definitely be off afterwards.
       for (i=0; i<3; i++) {
-         memset(lpd8806->grb, 0x80, lpd8806->grblen);
+         priv->grb[0]=0x00;
+         priv->grb[1]=0x00;
+         priv->grb[2]=0x00;
+         priv->grb[3]=0x00;
+
+         for (int j=4 ; j < priv->grblen ; j++) {
+            if (j%2 == 0) {priv->grb[j]=0x80;} else {priv->grb[j]=0x00;}}
+         }
          (void)ambitv_lpd8806_commit_outputs(component);
       }
    }
@@ -182,6 +190,7 @@ ambitv_lpd8806_set_output_to_rgb(
    int b)
 {
    int ret = -1, *outp = NULL, i, *rgb[] = {&r, &g, &b};
+   uint16_t rt,gt,bt;
    struct ambitv_lpd8806_priv* lpd8806 =
       (struct ambitv_lpd8806_priv*)component->priv;
    
@@ -214,9 +223,14 @@ ambitv_lpd8806_set_output_to_rgb(
             *rgb[i] = ambitv_color_map_with_lut(lpd8806->gamma_lut[i], *rgb[i]);
       }
       
-      lpd8806->grb[3 * ii]       = g >> 1 | 0x80;
-      lpd8806->grb[3 * ii + 1]   = r >> 1 | 0x80;
-      lpd8806->grb[3 * ii + 2]   = b >> 1 | 0x80;
+      rt = r >> 3;
+      gt = g >> 3;
+      bt = b >> 3;
+      
+      d = (rt*1024) + (gt*32) + bt + 32768;
+      
+      lpd8806->grb[2 * ii + 4]   = d >> 8;
+      lpd8806->grb[2 * ii + 5]   = d & 0x00FF;
       
       ret = 0;
    }
@@ -553,7 +567,7 @@ ambitv_lpd8806_create(const char* name, int argc, char** argv)
       if (ambitv_lpd8806_configure(lpd8806, argc, argv) < 0)
          goto errReturn;
       
-      priv->grblen   = sizeof(unsigned char) * 3 * priv->actual_num_leds;
+      priv->grblen   = sizeof(unsigned char) * ((2 * priv->actual_num_leds) + 4);
       priv->grb      = (unsigned char*)malloc(priv->grblen+1);
       
       if (priv->num_bbuf > 1) {
@@ -565,8 +579,14 @@ ambitv_lpd8806_create(const char* name, int argc, char** argv)
       } else
          priv->num_bbuf = 0;
 
-      memset(priv->grb, 0x80, priv->grblen);
-      priv->grb[priv->grblen]  = 0x00; // latch byte
+      priv->grb[0]=0x00;
+      priv->grb[1]=0x00;
+      priv->grb[2]=0x00;
+      priv->grb[3]=0x00;
+
+      for (int i=4 ; i < priv->grblen ; i++) {
+         if (i%2 == 0) {priv->grb[i]=0x80;} else {priv->grb[i]=0x00;}}
+      }
       
       for (i=0; i<3; i++) {
          if (priv->gamma[i] >= 0.0) {
