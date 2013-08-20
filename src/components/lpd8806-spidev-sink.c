@@ -163,18 +163,18 @@ ambitv_lpd8806_clear_leds(struct ambitv_sink_component* component)
       (struct ambitv_lpd8806_priv*)component->priv;
    
    if (NULL != lpd8806->grb && lpd8806->fd >= 0) {
-      int i;
+      int i, j;
       
       // send 3 times, in case there's noise on the line,
       // so that all LEDs will definitely be off afterwards.
       for (i=0; i<3; i++) {
-         priv->grb[0]=0x00;
-         priv->grb[1]=0x00;
-         priv->grb[2]=0x00;
-         priv->grb[3]=0x00;
+         lpd8806->grb[0]=0x00;
+         lpd8806->grb[1]=0x00;
+         lpd8806->grb[2]=0x00;
+         lpd8806->grb[3]=0x00;
 
-         for (int j=4 ; j < priv->grblen ; j++) {
-            if (j%2 == 0) {priv->grb[j]=0x80;} else {priv->grb[j]=0x00;}}
+         for (j=4 ; j < lpd8806->grblen ; j++) {
+            if (j%2 == 0) {lpd8806->grb[j]=0x80;} else {lpd8806->grb[j]=0x00;}
          }
          (void)ambitv_lpd8806_commit_outputs(component);
       }
@@ -584,8 +584,8 @@ ambitv_lpd8806_create(const char* name, int argc, char** argv)
       priv->grb[2]=0x00;
       priv->grb[3]=0x00;
 
-      for (int i=4 ; i < priv->grblen ; i++) {
-         if (i%2 == 0) {priv->grb[i]=0x80;} else {priv->grb[i]=0x00;}}
+      for (i=4 ; i < priv->grblen ; i++) {
+         if (i%2 == 0) {priv->grb[i]=0x80;} else {priv->grb[i]=0x00;}
       }
       
       for (i=0; i<3; i++) {
