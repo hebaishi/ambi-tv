@@ -1,0 +1,19 @@
+
+    Started with a fresh Debian Wheezy f(2013-07-26 edition)
+    I did NOT do the update/upgrade thingy
+    from within the /home/pi folder, I did: wget https://github.com/gkaindl/ambi-tv/archive/master.zip
+    next step, I unzipped master.zip
+    I did go into the misc folder, and did: sudo bash get-kernel-source.sh
+    when this finished, I did go into the usbtv-driver folder and did: make
+    next I created a folder "extra" within /lib/modules/3.6.11+ and copied the usbtv.ko into this new folder
+    next: sudo depmod 3.6.11+
+    sudo modprobe videobuf2_core
+    sudo modprobe videobuf2_vmalloc
+    sudo modprobe usbtv
+    You should now have a "video0" in the /dev - If this is OK, then you can add the following lines to /etc/modules videobuf2_core videobuf2_vmalloc usbtv - Reboot RPI, eeh voila, ambi-tv should work fine :-)
+    After this, I did the update/upgrade thingy …
+
+Once that's done, you need to enable the spi kernel module. You can follow this guide to do that:
+http://www.100randomtasks.com/simple-spi-on-raspberry-pi
+
+Then compile and run ambi-tv. What led strip are using? You might need to modify the ambi-tv source code for the hardware protocol for the IC in your led strip, but I can help you with that.
